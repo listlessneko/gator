@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	"codeberg.org/kedarui/gator/internal/config"
 	"codeberg.org/kedarui/gator/internal/database"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -51,11 +54,38 @@ func handlerLogin(s *state, cmd command) error {
 		return fmt.Errorf("no username provided")
 	}
 	username := cmd.args[0]
-	err := s.config.SetUser(username)
+
+	_, err := s.db.GetUser(context.Background(), username)
+	if err != nil {
+		return fmt.Errorf("no username found")
+	}
+	err = s.config.SetUser(username)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("username: '%s' has been set\n", username)
+	return nil
+}
+
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.args) == 0 {
+		return fmt.Errorf("no username provided")
+	}
+
+	name := cmd.args[0]
+	userParams := database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      name,
+	}
+
+	_, err := s.db.CreateUser(context.Background(), userParams)
+	if err != nil {
+		os.Exit(1)
+	}
+	s.config.SetUser(name)
+	fmt.Printf("user '%s' was successfully created\n", name)
 	return nil
 }
 
@@ -79,6 +109,7 @@ func main() {
 	}
 
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	if len(os.Args) < 2 {
 		fmt.Println("no arguments provided")
