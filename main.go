@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"codeberg.org/kedarui/gator/internal/config"
@@ -89,6 +90,24 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
+func handlerUsers(s *state, cmd command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return err
+	}
+	var names []string
+	for _, u := range users {
+		name := "* " + u.Name
+		if u.Name == s.config.CurrentUserName {
+			name += " (current)"
+		}
+		names = append(names, name)
+	}
+	final := strings.Join(names, "\n")
+	fmt.Println(final)
+	return nil
+}
+
 func handlerReset(s *state, cmd command) error {
 	err := s.db.ResetUser(context.Background())
 	if err != nil {
@@ -119,6 +138,7 @@ func main() {
 
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("users", handlerUsers)
 	cmds.register("reset", handlerReset)
 
 	if len(os.Args) < 2 {
