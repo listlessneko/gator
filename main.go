@@ -26,7 +26,12 @@ func (c *commands) run(s *state, cmd command) error {
 	if s == nil {
 		return fmt.Errorf("state does not exist")
 	}
-	err := c.callback[cmd.name](s, cmd)
+
+	fn, ok := c.callback[cmd.name]
+	if !ok {
+		return fmt.Errorf("command does not exist")
+	}
+	err := fn(s, cmd)
 	if err != nil {
 		return err
 	}
