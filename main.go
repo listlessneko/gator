@@ -1,13 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"codeberg.org/kedarui/gator/internal/config"
+	"codeberg.org/kedarui/gator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
+	db     *database.Queries
 	config *config.Config
 }
 
@@ -65,6 +69,10 @@ func main() {
 	s := &state{
 		config: &content,
 	}
+
+	db, err := sql.Open("postgres", s.config.DBURL)
+	dbQueries := database.New(db)
+	s.db = dbQueries
 
 	cmds := commands{
 		callback: make(callbackMap),
