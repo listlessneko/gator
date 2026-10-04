@@ -206,6 +206,24 @@ func handlerAddFeed(s *state, cmd command) error {
 	return nil
 }
 
+func handlerFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+	for _, f := range feeds {
+		fmt.Printf("Feed Name: %s\n", f.Name)
+		fmt.Printf("Feed URL: %s\n", f.Url)
+		user, err := s.db.GetUserById(context.Background(), f.UserID)
+		if err != nil {
+			fmt.Println("Created By: Unknown")
+			return err
+		}
+		fmt.Printf("Created By: %s\n", user.Name)
+	}
+	return nil
+}
+
 func main() {
 	content, err := config.Read()
 	if err != nil {
@@ -231,6 +249,7 @@ func main() {
 	cmds.register("reset", handlerReset)
 	cmds.register("agg", handlerAgg)
 	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("feeds", handlerFeeds)
 
 	if len(os.Args) < 2 {
 		fmt.Println("no arguments provided")
