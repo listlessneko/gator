@@ -169,7 +169,7 @@ func handlerAgg(s *state, cmd command) error {
 	url := "https://www.wagslane.dev/index.xml"
 	feed, err := fetchFeed(context.Background(), url)
 	if err != nil {
-	return err
+		return err
 	}
 	fmt.Printf("Title: %s\n", html.UnescapeString(feed.Channel.Title))
 	fmt.Printf("Description: %s\n", html.UnescapeString(feed.Channel.Description))
@@ -190,13 +190,14 @@ func handlerAddFeed(s *state, cmd command) error {
 	}
 
 	feedParams := database.CreateFeedParams{
-		ID: uuid.New(),
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Name: cmd.args[0],
-		Url: cmd.args[1],
-		UserID: user.ID,
+		Name:      cmd.args[0],
+		Url:       cmd.args[1],
+		UserID:    user.ID,
 	}
+
 	feed, err := s.db.CreateFeed(context.Background(), feedParams)
 	if err != nil {
 		return err
@@ -242,11 +243,11 @@ func handlerFollow(s *state, cmd command) error {
 	}
 
 	feedFollowParams := database.CreateFeedFollowParams{
-		ID: uuid.New(),
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID: user.ID,
-		FeedID: feed.ID,
+		UserID:    user.ID,
+		FeedID:    feed.ID,
 	}
 
 	feedFollow, err := s.db.CreateFeedFollow(context.Background(), feedFollowParams)
