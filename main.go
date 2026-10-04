@@ -326,6 +326,37 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	return nil
 }
 
+func scrapeFeeds(s *state) error {
+	nextFeed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return err
+	}
+
+	fetchedFeed, err := fetchFeed(context.Background(), nextFeed.Url)
+	if err != nil {
+		return err
+	}
+
+	markFeedFetchedParams := database.MarkFeedFetchedParams{
+		UpdatedAt: time.Now(),
+		LastFetchedAt: sql.NullTime{
+			Time: time.Now(),
+			Valid: true,
+		},
+		ID: nextFeed.ID,
+	}
+
+	_, err = s.db.MarkFeedFetched(context.Background(), markFeedFetchedParams)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range fetchedFeed.Channel.Item {
+		fmt.Printf("Fetched: %s\n", i.Title)
+	}
+	return nil
+}
+
 func main() {
 	content, err := config.Read()
 	if err != nil {
