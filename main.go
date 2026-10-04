@@ -180,6 +180,32 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.args) < 2 {
+		return fmt.Errorf("missing argument(s)")
+	}
+	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return err
+	}
+
+	feedParams := database.CreateFeedParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name: cmd.args[0],
+		Url: cmd.args[1],
+		UserID: user.ID,
+	}
+	feed, err := s.db.CreateFeed(context.Background(), feedParams)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Feed: %+v\n", feed)
+	return nil
+}
+
 func main() {
 	content, err := config.Read()
 	if err != nil {
@@ -204,6 +230,7 @@ func main() {
 	cmds.register("users", handlerUsers)
 	cmds.register("reset", handlerReset)
 	cmds.register("agg", handlerAgg)
+	cmds.register("addfeed", handlerAddFeed)
 
 	if len(os.Args) < 2 {
 		fmt.Println("no arguments provided")
