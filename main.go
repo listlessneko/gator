@@ -224,6 +224,41 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.args) < 1 {
+		return fmt.Errorf("no feed provided")
+	}
+
+	url := cmd.args[0]
+
+	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return err
+	}
+
+	feed, err := s.db.GetFeedByUrl(context.Background(), url)
+	if err != nil {
+		return err
+	}
+
+	feedFollowParams := database.CreateFeedFollowParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID: user.ID,
+		FeedID: feed.ID,
+	}
+
+	feedFollow, err := s.db.CreateFeedFollow(context.Background(), feedFollowParams)
+	if err != nil {
+		return err
+	}
+	fmt.Println("successfully followed feed")
+	fmt.Printf("Feed Name: %s\n", feedFollow.FeedName)
+	fmt.Printf("Followed By: %s\n", feedFollow.UserName)
+	return nil
+}
+
 func main() {
 	content, err := config.Read()
 	if err != nil {
@@ -250,6 +285,7 @@ func main() {
 	cmds.register("agg", handlerAgg)
 	cmds.register("addfeed", handlerAddFeed)
 	cmds.register("feeds", handlerFeeds)
+	cmds.register("follow", handlerFollow)
 
 	if len(os.Args) < 2 {
 		fmt.Println("no arguments provided")
