@@ -14,7 +14,8 @@ import (
 	"codeberg.org/kedarui/gator/internal/config"
 	"codeberg.org/kedarui/gator/internal/database"
 	"github.com/google/uuid"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
+	"github.com/lib/pq/pqerror"
 )
 
 type state struct {
@@ -169,7 +170,6 @@ func handlerAgg(s *state, cmd command) error {
 		return fmt.Errorf("no time provided")
 	}
 	timeBetweenRequests := cmd.args[0]
-	fmt.Printf("Collecting feeds every %s\n", timeBetweenRequests)
 
 	timeParsed, err := time.ParseDuration(timeBetweenRequests)
 	if err != nil {
@@ -178,6 +178,7 @@ func handlerAgg(s *state, cmd command) error {
 
 	ticker := time.NewTicker(timeParsed)
 	for ; ; <-ticker.C {
+		fmt.Printf("Collecting feeds every %s\n", timeBetweenRequests)
 		scrapeFeeds(s)
 	}
 }
@@ -328,6 +329,29 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	return nil
 }
 
+func createPost(s *state, feed database.Feed, item RSSItem) error {
+	published_at, _ := time.Parse(time.RFC1123Z, item.PubDate)
+	createPostParams := database.CreatePostParams{
+		ID:          uuid.New(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		Title:       item.Title,
+		Url:         item.Link,
+		Description: item.Description,
+		PublishedAt: sql.NullTime{
+			Time: published_at,
+			Valid: true,
+		},
+		FeedID:      feed.ID,
+	}
+	_, err := s.db.CreatePost(context.Background(), createPostParams)
+	pqErr := pq.As(err, pqerror.UniqueViolation)
+	if pqErr != nil {
+		fmt.Printf("link %s already exists\n", item.Link)
+	}
+	return nil
+}
+
 func scrapeFeeds(s *state) error {
 	nextFeed, err := s.db.GetNextFeedToFetch(context.Background())
 	if err != nil {
@@ -342,7 +366,7 @@ func scrapeFeeds(s *state) error {
 	markFeedFetchedParams := database.MarkFeedFetchedParams{
 		UpdatedAt: time.Now(),
 		LastFetchedAt: sql.NullTime{
-			Time: time.Now(),
+			Time:  time.Now(),
 			Valid: true,
 		},
 		ID: nextFeed.ID,
@@ -354,7 +378,7 @@ func scrapeFeeds(s *state) error {
 	}
 
 	for _, i := range fetchedFeed.Channel.Item {
-		fmt.Printf("Fetched: %s\n", i.Title)
+		createPost(s, nextFeed, i)
 	}
 	return nil
 }
