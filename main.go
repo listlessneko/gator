@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -374,6 +375,47 @@ func scrapeFeeds(s *state) error {
 	return nil
 }
 
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	cmdLen := len(cmd.args)
+	if cmdLen > 1 {
+		return fmt.Errorf("too many arguments")
+	}
+
+	var limit int32 = 2
+
+	if cmdLen == 1 {
+		i, err := strconv.ParseInt(cmd.args[0], 10, 32)
+		if err != nil {
+			return fmt.Errorf("argument must be a number")
+		}
+		limit = int32(i)
+	}
+
+	getPostsForUserParams := database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit: limit,
+	}
+
+	posts, err := s.db.GetPostsForUser(context.Background(), getPostsForUserParams)
+	if err != nil {
+		return err
+	}
+
+	for _, p := range posts {
+		fmt.Printf("Title: %s\n", p.Title)
+		fmt.Printf("Description: %s\n", p.Description)
+		fmt.Printf("URL: %s\n", p.Url)
+		if !p.PublishedAt.Valid {
+			fmt.Println("Published At: unknown")
+		} else {
+			fmt.Printf("Published At: %s\n", p.PublishedAt.Time.Format(time.RFC1123Z))
+		}
+		fmt.Println("")
+	}
+
+	return nil
+}
+
 func main() {
 	content, err := config.Read()
 	if err != nil {
@@ -403,6 +445,7 @@ func main() {
 	cmds.register("follow", middlewareLoggedIn(handlerFollow))
 	cmds.register("following", middlewareLoggedIn(handlerFollowing))
 	cmds.register("unfollow", middlewareLoggedIn(handlerUnfollow))
+	cmds.register("browse", middlewareLoggedIn(handlerBrowse))
 
 	if len(os.Args) < 2 {
 		fmt.Println("no arguments provided")
