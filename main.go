@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"fmt"
-	"html"
 	"io"
 	"net/http"
 	"os"
@@ -166,18 +165,21 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	url := "https://www.wagslane.dev/index.xml"
-	feed, err := fetchFeed(context.Background(), url)
+	if len(cmd.args) < 1 {
+		return fmt.Errorf("no time provided")
+	}
+	timeBetweenRequests := cmd.args[0]
+	fmt.Printf("Collecting feeds every %s\n", timeBetweenRequests)
+
+	timeParsed, err := time.ParseDuration(timeBetweenRequests)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Title: %s\n", html.UnescapeString(feed.Channel.Title))
-	fmt.Printf("Description: %s\n", html.UnescapeString(feed.Channel.Description))
-	for _, item := range feed.Channel.Item {
-		fmt.Printf("Title: %s\n", html.UnescapeString(item.Title))
-		fmt.Printf("Description: %s\n", html.UnescapeString(item.Description))
+
+	ticker := time.NewTicker(timeParsed)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
 	}
-	return nil
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
