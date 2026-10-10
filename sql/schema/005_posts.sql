@@ -6,7 +6,7 @@ CREATE TABLE posts (
   title TEXT NOT NULL,
   url TEXT UNIQUE NOT NULL,
   description TEXT NOT NULL,
-  published_at TIMESTAMP NOT NULL,
+  published_at TIMESTAMP,
   feed_id UUID NOT NULL,
   CONSTRAINT fk_feed_id
     FOREIGN KEY (feed_id)

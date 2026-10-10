@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,7 +35,7 @@ type CreatePostParams struct {
 	Title       string
 	Url         string
 	Description string
-	PublishedAt time.Time
+	PublishedAt sql.NullTime
 	FeedID      uuid.UUID
 }
 
