@@ -22,6 +22,6 @@ WITH user_feeds AS (
 
 SELECT posts.*
 FROM posts
-INNER JOIN user_feeds ON user_feeds.feed_id = post.feed_id
+INNER JOIN user_feeds ON user_feeds.feed_id = posts.feed_id
 ORDER BY posts.published_at DESC
 LIMIT $2;

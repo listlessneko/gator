@@ -74,7 +74,7 @@ WITH user_feeds AS (
 
 SELECT posts.id, posts.created_at, posts.updated_at, posts.title, posts.url, posts.description, posts.published_at, posts.feed_id
 FROM posts
-INNER JOIN user_feeds ON user_feeds.feed_id = post.feed_id
+INNER JOIN user_feeds ON user_feeds.feed_id = posts.feed_id
 ORDER BY posts.published_at DESC
 LIMIT $2
 `
