@@ -339,10 +339,10 @@ func createPost(s *state, feed database.Feed, item RSSItem) error {
 		Url:         item.Link,
 		Description: item.Description,
 		PublishedAt: sql.NullTime{
-			Time: published_at,
+			Time:  published_at,
 			Valid: true,
 		},
-		FeedID:      feed.ID,
+		FeedID: feed.ID,
 	}
 	_, err := s.db.CreatePost(context.Background(), createPostParams)
 	pqErr := pq.As(err, pqerror.UniqueViolation)
